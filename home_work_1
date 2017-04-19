@@ -1,0 +1,491 @@
+
+
+
+library("fma")
+library("TTR")
+library("fpp")
+library("ggplot2")
+library("car")
+
+
+
+# chapter 2
+#Q1.1
+#Monthly total of people on unemployed benefits in Australia (January 1956-July 1992)
+data(dole)
+par(mfrow=c(2,1))
+plot(dole,main="Unemployed people on benefits",xlab="year",ylab="total people_untransformted")
+plot(BoxCox(dole,0.5),main="Unemployed people on benefits",xlab="year",ylab="total people_logscale")
+plot(decompose(dole))
+#transforming data doesn't help much in reducing variance in this case 
+
+
+
+
+
+#Q1.2
+#Monthly total of accidental deaths in the United States (January 1973-December 1978). 
+data_ <- usdeaths
+par(mfrow=c(2,1))
+plot(data_,main="Acciental deaths in united states",xlab="year",ylab="total deaths_untransformted")
+plot(BoxCox(data_,0.5),main="Acciental deaths in united states",xlab="year",ylab="total death_logscale")
+plot(decompose(data_))
+
+# even after tranformation the variability of the curve remains same 
+
+#Q1.3
+#Quarterly production of bricks (in millions of units) at Portland, Australia (March 1956-September 1994). 
+data("bricksq")
+par(mfrow=c(2,1))
+plot(bricksq,main="Brickproduction ", xlab="year",ylab="units")
+plot(BoxCox(bricksq,0.5),main="brick production",xlab="year",ylab="units")
+plot(decompose(bricksq))
+
+
+#Q2
+#Produce a time plot of the series
+#Produce forecasts using the drift method and plot them. 
+#Show that the graphed forecasts are identical to extending the line drawn between the first and last observations. 
+#Try some of the other benchmark functions to forecast the same data set. Which do you think is best? Why?
+data("dowjones")
+length(dowjones)
+dj_subset <- window(dowjones,end=70)
+plot(dowjones,main="Dow Jones Index ",
+     ylab="",xlab="Day",xlim=c(2,100))
+lines(meanf(dj_subset,h=8)$mean,col=4)
+lines(rwf(dj_subset,h=8)$mean,col=2)
+lines(rwf(dj_subset,drift=TRUE,h=8)$mean,col=3)
+legend("topleft",lty=1,col=c(4,2,3),
+       legend=c("Mean method","Naive method","Drift method"))
+#Naive method seems to be the best case for the predicted range among the other two
+#checking for other prediction range
+dj_subset <- window(dowjones,end=65)
+plot(dowjones,main="Dow Jones Index ",
+     ylab="",xlab="Day",xlim=c(2,100))
+lines(meanf(dj_subset,h=8)$mean,col=4)
+lines(rwf(dj_subset,h=8)$mean,col=2)
+lines(rwf(dj_subset,drift=TRUE,h=8)$mean,col=3)
+legend("topleft",lty=1,col=c(4,2,3),
+       legend=c("Mean method","Naive method","Drift method"))
+#Naive method seems to give better results in case of dowjones index
+
+#Q3
+#Produce some plots of the data in order to become familiar with it. 
+#Split the data into a training set of 300 observations and a test set of 69 observations. 
+#Try various benchmark methods to forecast the training set and compare the results on the test set. Which method did best?
+data("ibmclose")
+length(ibmclose)
+plot(decompose(ibmclose))
+ibm_subset <- window(ibmclose,end=300)
+mean_method <- meanf(ibm_subset,h=69)$mean
+naive_method<- rwf(ibm_subset,h=69)$mean
+drift_method <- rwf(ibm_subset,drift=TRUE,h=69)$mean
+plot(ibmclose,main="ibm closing stocks ",
+     ylab="",xlab="Day",xlim=c(2,380))
+lines(mean_method,col=4)
+lines(naive_method,col=2)
+lines(drift_method,col=3)
+legend("topleft",lty=1,col=c(4,2,3),
+       legend=c("Mean method","Naive method","Drift method"))
+#it is difficult to directly interpret the results from the graph
+check <- window(ibmclose,starts=301)
+mea<- accuracy(mean_method,check)
+nai <- accuracy(naive_method,check)
+dri <- accuracy(drift_method,check)
+
+# ME     RMSE     MAE       MPE     MAPE      ACF1 Theil's U
+# Test set -130.618 132.1256 130.618 -35.47882 35.47882 0.9314689  19.05515
+# > nai
+# ME    RMSE      MAE       MPE     MAPE      ACF1 Theil's U
+# Test set -3.724638 20.2481 17.02899 -1.293917 4.668186 0.9314689  2.973486
+# > dri
+# ME     RMSE      MAE      MPE     MAPE      ACF1 Theil's U
+# Test set 6.108138 17.06696 13.97475 1.419201 3.707888 0.9045875  2.361092
+#upon comapring the results between naive and drift method, 
+#in this case drift tmethod predicts the results better than others
+
+
+
+#Q4
+
+#Produce some plots of the data in order to become familiar with it. 
+#Split the hsales data set into a training set and a test set, where the test set is the last two years of data. 
+#Try various benchmark methods to forecast the training set and compare the results on the test set.Which method did best? 
+
+
+data("hsales")
+plot(decompose(hsales))
+hsales_subset <- window(hsales,end=1994)
+#it stops at one value in 1994
+mean_method <- meanf(hsales_subset,h=23)$mean
+naive_method<- rwf(hsales_subset,h=23)$mean
+drift_method <- rwf(hsales_subset,drift=TRUE,h=23)$mean
+plot(hsales,main="housing sales data ",
+     ylab="",xlab="Day")
+lines(mean_method,col=4)
+lines(naive_method,col=2)
+lines(drift_method,col=3)
+legend("topleft",lty=1,col=c(4,2,3),
+       legend=c("Mean method","Naive method","Drift method"))
+#it is difficult to directly interpret the results from the graph
+check <- window(hsales,start=1994)
+mea<- accuracy(mean_method,check)
+nai <- accuracy(naive_method,check)
+dri <- accuracy(drift_method,check)
+# mea
+#ME     RMSE      MAE      MPE     MAPE      ACF1 Theil's U
+#Test set 4.579051 9.319553 7.906755 6.057223 13.70492 0.5617454  1.233817
+# nai
+#ME     RMSE      MAE      MPE     MAPE      ACF1 Theil's U
+#Test set 11.5 14.07609 12.04545 18.57959 19.92256 0.5617454  1.783224
+# dri
+#ME     RMSE      MAE      MPE     MAPE      ACF1 Theil's U
+#Test set 11.95635 14.42022 12.38276 19.41995 20.48335 0.5600251  1.829554
+# in this case the mean method gives the best accurate resultsrather than naive and drift methods.
+
+
+#chapter 4 
+#Q1
+# Electricity consumption was recorded for a small town on 12 randomly chosen days. The following maximum temperatures (degrees Celsius) and consumption (megawatt-hours) were recorded for each day.  
+# 
+# Plot the data and find the regression model for Mwh with temperature as an explanatory variable. Why is there a negative relationship?
+# Produce a residual plot. Is the model adequate? Are there any outliers or influential observations?
+# Use the model to predict the electricity consumption that you would expect for a day with maximum temperature 
+# and a day with maximum temperature 
+# . Do you believe these predictions?
+# Give prediction intervals for your forecasts. The following R code will get you started:
+
+
+# day <- c(1,2,3,4,5,6,7,8,9,10,11,12)
+# mwh <- c(16.3,16.8,15.5,18.2,15.2,17.5,19.8,19.0,17.5,16.0,19.6,18.0)
+# temp <- c(29.3,21.7,23.7,10.4,29.7,11.9,9.0,23.4,17.8,30.0,8.6,11.8)
+# elec <- data.frame(day,mwh,temp)
+#plot(jitter(elec$temp)~jitter(elec$mwh),xlab="mwh",ylab="temperature")
+
+data("econsumption")
+plot(Mwh ~ temp, data=econsumption)
+axis(1,seq(7:32))
+fit <- lm(Mwh ~ temp, data=econsumption)
+abline(fit)
+summary(fit)
+plot(residuals(fit) ~ temp, data=econsumption)
+axis(1,seq(7:32))
+abline(0,0)
+# The residual plot seems to follows a random pattern
+mean(fit$residuals)
+# 2.428613e-17
+# very near to zero model is un biased
+plot(econsumption$Mwh,fit$residuals)
+# The residuals are un corelated 
+# the model is vaild
+# the negative relation can be explained with 
+# increase in temperature more power is consumed like more loss of power,more coolants etc
+#
+
+
+forecast(fit, newdata=data.frame(temp=c(10,35)))
+# Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
+# 1       18.74795 17.27010 20.22579 16.34824 21.14766
+# 2       15.11902 13.50469 16.73335 12.49768 17.74035
+# for 10 degrees max temperature 18.747 and 35 degrees 15.11902
+# The model predicts the interval(low,high) with 80% and 95% confidence interval
+
+# checking the outliers 
+#Box plot didn't reveal outliers
+# No influential observations and outliers in the data set
+par(mfrow=c(2,1))
+
+plot(residuals(fit2) ~ temp, data=econsumption[-8,])
+axis(1,seq(7:32))
+abline(0,0)
+
+plot(residuals(fit) ~ temp, data=econsumption)
+axis(1,seq(7:32))
+abline(0,0)
+par(mfrow=c(1,1))
+
+#Q2
+# Update the data set `olympic` to include the winning times from the last few Olympics. 
+# Plot the winning time against the year. Describe the main features of the scatterplot. 
+# Fit a regression line to the data. Obviously the winning times have been decreasing, but at what *average* rate per year? 
+# Plot the residuals against the year. What does this indicate about the suitability of the fitted line? 
+# Predict the winning time for the men's 400 meters final in the 2000, 2004, 2008 and 2012 Olympics. Give a prediction interval for each of your forecasts. What assumptions have you made in these calculations? 
+# Find out the actual winning times for these Olympics (see www.databaseolympics.com). How good were your forecasts and prediction intervals?
+olympic.data <- olympic
+test <- data.frame(c(2000,2004,2008),c(43.84,44.00,43.75))
+colnames(test)<- colnames(olympic.data)
+ olympic.data<- rbind(olympic.data,test)
+
+plot(olympic.data,xlab="Year",ylab="time",main="complete time of men 400m race")
+#The winning time were rapidly decreasing upto a point
+cor(olympic.data$Year,olympic.data$time)
+# -0.9093099
+# the data seem higly co related but time ,year are not direclty co related
+# the graph seems linear and has one outlier ,the first observation is an outlier
+
+oly.model <- lm(time~Year,data = olympic.data)
+abline(oly.model)
+# Coefficients:
+#   (Intercept)         Year  
+# 180.31698     -0.06863  
+
+#The average rate at which the complete time decreases is -0.06863
+plot(oly.model$residuals~ olympic.data$Year)
+abline(0,0)
+#The residuals do not follow a random pattern
+#The presence of outlier in the data has influence on the data 
+# because mean seems near to zero despite having many residuals negative(forecast<actual)
+
+#Newmodel
+olympic.data <- olympic.data[-1,]
+oly.model <- lm(time~Year,data = olympic.data)
+abline(oly.model)
+plot(oly.model$residuals~ olympic.data$Year)
+abline(0,0)
+
+#The first observation from the data is removed
+# mean(oly.model$residuals)
+# [1] 5.121771e-18
+# Removal of outlier caused mean to be almost near to zero
+
+ forecast(oly.model,newdata = data.frame(Year=c(2000,2004,2008,2012)),level = c(70,80,95))
+ # forecast(oly.model,newdata = data.frame(Year=c(2000,2004,2008,2012)))
+ # Point Forecast    Lo 70    Hi 70    Lo 80    Hi 80    Lo 95    Hi 95
+ # 1       43.29178 42.49573 44.08782 42.30120 44.28236 41.73874 44.84481
+ # 2       43.05264 42.25183 43.85345 42.05613 44.04915 41.49031 44.61497
+ # 3       42.81350 42.00754 43.61946 41.81058 43.81642 41.24112 44.38589
+ # 4       42.57436 41.76287 43.38586 41.56456 43.58417 40.99119 44.15754
+
+# In 2012 no gold but gold had time of 43.94 american player had time of 44.12 
+# 2000 43.84
+# 2004 44.00
+# 2008 43.75
+# As year is not a proper predictor for winning time the model just works like a hit and miss
+# The predicted fore casts are in our prediction intervals 
+# At 70% confidence level the predicted values donot  include the true values 
+# They are barely covered in 80% but better in 95% confidence level 
+ 
+ 
+ 
+ 
+ 
+ 
+ #Chapther 5
+ #Q1.
+ # Produce a time plot of the data and describe the patterns in the graph. Identify any unusual or unexpected fluctuations in the time series. 
+ # Explain why it is necessary to take logarithms of these data before fitting a model. 
+ # Use R to fit a regression model to the logarithms of these sales data with a linear trend, seasonal dummies and a “surfing festival” dummy variable. 
+ # Plot the residuals against time and against the fitted values. Do these plots reveal any problems with the model? 
+ # Do boxplots of the residuals for each month. Does this reveal any problems with the model? 
+ # What do the values of the coefficients tell you about each variable? 
+ # What does the Durbin-Watson statistic tell you about your model? 
+ # Regardless of your answers to the above questions, use your regression model to predict the monthly sales for 1994, 1995, and 1996. Produce prediction intervals for each of your forecasts. 
+ # Transform your predictions and intervals to obtain predictions and intervals for the raw data.
+ # How could you improve these predictions by modifying the model? 
+ 
+ #library("fpp")
+ par(mfrow=c(2,1))
+ 
+ data_ <- fancy 
+ p <- log(fancy)
+ 
+ plot(fancy)
+ plot(p)
+ 
+#This plot reveals the gradual increse in sales over the year as stated in the problem
+#As stated the sales are high in christmas 
+ seasonplot(p,col = 1:length(p),year.labels.left  = TRUE) 
+ seasonplot(fancy,col = 1:length(fancy),year.labels.left  = TRUE) 
+ 
+ #Main difference can be seen in the seasonal plot 
+ # The graph becomes clearer and the patterns in the data can be clearly seen
+ # In general logarithms are  used to reduce the scale of the data and reduce unnecessary variance in the data
+ 
+ 
+ 
+ data_ <- log(fancy)
+data_dec <- decompose(data_)
+trend <- data_dec$trend
+season <- data_dec$seasonal
+surf <- data_dec$random
+  
+  model_log <- tslm(data_ ~ trend+season+surf)
+
+
+  plot(trend,model_log$residuals,type="p")
+  
+  
+  ggplot(data = data_,aes(x=trend,y=residuals(model_log)))+geom_point() 
+  ggplot(data = data_,aes(x=season,y=residuals(model_log)))+geom_point() 
+  ggplot(data = data_,aes(x=surf,y=residuals(model_1log)))+geom_point() 
+
+  # mean of residuals is  -5.821133e-19 which can be assumed equal to zero hence no bias
+   # the plot seems unbiased and heteroscedastic(equal variance )
+   #The scatterplots show no obvious patterns 
+ # surfing festival sales are high during christmas
+ # 7 years of data extracting high sales in December for each year
+  boxplot(matrix(model_1$residuals,nrow = 7))
+# It reveals that there are several outliers which were considered in the model
+  
+  # Surf festival has highest impact on sales 
+ 
+  
+   summary(model_1)
+  
+  # Call:
+  #   lm(formula = sales ~ seasonal + trend + surf, data = data_)
+  # 
+  # Residuals:
+  #   Min       1Q   Median       3Q      Max 
+  # -1.30537 -0.43844 -0.09896  0.38990  1.24509 
+  # 
+  # Coefficients:
+  #   Estimate Std. Error t value Pr(>|t|)    
+  # (Intercept)  9.13930    0.16468  55.498  < 2e-16 ***
+  #   seasonal     1.13754    0.13158   8.645 4.37e-13 ***
+  #   trend        0.01058    0.01928   0.549    0.585    
+  # surf         0.76810    0.52756   1.456    0.149    
+  # ---
+  #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+  # 
+  # Residual standard error: 0.5743 on 80 degrees of freedom
+  # Multiple R-squared:  0.4907,	Adjusted R-squared:  0.4716 
+  # F-statistic: 25.69 on 3 and 80 DF,  p-value: 9.705e-12
+  # The coefficient implies for every one 
+  
+  
+ # Incase of seasonal data the coefficient fails to reject the null hypothesis
+   # This questions the effect of seasonal data for sales prediction
+   
+  
+  
+  
+  
+#If the Durbin–Watson statistic is substantially less than 2,
+#there is evidence of positive serial correlation
+   # Durbin-Watson test
+   # 
+   # data:  model_1
+   # DW = 0.055384, p-value < 2.2e-16
+   # alternative hypothesis: true autocorrelation is greater than 0
+   
+  #There exists co relation between the variables
+
+   
+     # 1987:1993
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+   
+   #chap5 Q2
+   
+   
+   data("texasgas")
+   
+
+   # scatter plot   
+   plot(texasgas$price,texasgas$consumption)
+   
+   m1_data <- exp(texasgas)
+   model_1 <- lm(consumption~price,data = m1_data)
+   
+   m2_data. <- texasgas
+   temp <- pmax(texasgas$price-60,0)
+   m2_data <- data.frame(consumption=texasgas$consumption,price=texasgas$price,temp=temp)
+   model_2 <- lm(consumption~price+temp,data = m2_data)
+   
+   
+   model_3 <- lm(consumption~ price+price^2,data = texasgas)
+   
+   hist(texasgas$price)
+   # This shows the density of data changes at this point hence could be a valid reason
+   # this has been confirmed with hist(fuel$City) to which knot was included at 25
+   summary(model_1)
+   # Multiple R-squared:  0.004623,	Adjusted R-squared:  -0.05068
+   summary(model_2)
+   #Multiple R-squared:  0.8572,	Adjusted R-squared:  0.8404
+   #model_2 captures more variance among all three
+   # This must be due to capture of non linear components
+   
+   summary(model_3)
+   # Multiple R-squared:  0.6241,	Adjusted R-squared:  0.6033 
+   # model_3 comes after the second one 
+   var(model_1$residuals)
+   var(model_2$residuals)
+   var(model_3$residuals)
+   
+   plot(m1_data$price,model_1$residuals)
+   acf(residuals(model1))
+   plot(texasgas$price,model_3$residuals)
+   plot(texasgas$price,model_2$residuals)
+   plot(temp,model_2$residuals) 
+   # Just for my exploratory data analysis
+   
+
+   
+   new_data <- data.frame(price=c(40,60,80,100,120))
+  temp2 <- pmax(new_data$price-60,0)
+
+
+   m1_test <- log(new_data)
+   m2_test <- data.frame(price=c(40,60,80,100,120),temp=temp2)   
+   m3_test <- new_data
+   forecast(model_1,m1_test)
+ plot(forecast(model_1,m1_test))
+     forecast(model_2,m2_test)
+
+      forecast(model_3,m3_test)
+
+      plot(forecast(model_3,m3_test))   
+   # predictions and prediction intervals
+
+      
+      
+      
+  cor(texasgas$price,texasgas$price^2) 
+  #0.9904481
+  
+  # they are highly collinear
+  # this leads to multi collinearity in the data
+  # results in unstable parameter estimates 
+  
+  
+      
+         
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+ 
+
+   
+    
+
+
+
+
+
+
